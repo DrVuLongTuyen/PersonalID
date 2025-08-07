@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal ID - Quản Lý Thông Tin Cá Nhân</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Cool Gray (Nền), Sky Blue (Nhấn), Slate (Chữ) -->
+    <!-- 
+      Application Structure Plan:
+      - Đây là một Ứng dụng Đơn trang (Single-Page Application - SPA) được chứa hoàn toàn trong một file HTML.
+      - Thay vì tải lại trang, JavaScript sẽ ẩn/hiện các khu vực (<div>) khác nhau để tạo cảm giác chuyển trang (Login, Register, Profile, Admin).
+      - Để đáp ứng yêu cầu "một file duy nhất" và có thể chạy ngay, ứng dụng này MÔ PHỎNG một hệ thống backend và database bằng cách sử dụng `localStorage` của trình duyệt. Dữ liệu sẽ được lưu trực tiếp trên máy của người dùng.
+      - Cấu trúc này được chọn vì nó là cách duy nhất để cung cấp đầy đủ các tính năng tương tác (đăng ký, đăng nhập, CRUD) mà không cần đến máy chủ bên ngoài, đảm bảo ứng dụng hoạt động ngay lập tức.
+    -->
+    <!-- 
+      Visualization & Content Choices:
+      - Đăng ký/Hồ sơ (Goal: Organize/Inform): Sử dụng form HTML để người dùng nhập và quản lý toàn bộ 16 trường thông tin. Tương tác được xử lý bằng JS để lưu vào `localStorage`.
+      - Bảng Admin (Goal: Organize/Compare): Sử dụng bảng HTML để hiển thị danh sách người dùng. Tương tác xóa được xử lý bằng JS.
+      - Thông báo (Goal: Inform): Các khối div đơn giản được dùng để hiển thị thông báo lỗi hoặc thành công cho người dùng.
+      - Toàn bộ logic được viết bằng Vanilla JavaScript, không phụ thuộc thư viện bên ngoài (ngoại trừ Tailwind CSS cho giao diện).
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="font-bold text-xl text-sky-600">PersonalID</a>
+                </div>
+                <div id="nav-links" class="flex items-center space-x-4">
+                    <!-- Links sẽ được JS chèn vào đây -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto mt-8 px-4">
+        
+        <!-- Login Page -->
+        <div id="login-page" class="page">
+            <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold text-center mb-6">Đăng Nhập</h2>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="login-email" class="block text-sm font-medium text-slate-600 mb-1">Email</label>
+                        <input type="email" id="login-email" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-sky-500 focus:border-sky-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="login-password" class="block text-sm font-medium text-slate-600 mb-1">Mật khẩu</label>
+                        <input type="password" id="login-password" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-sky-500 focus:border-sky-500" required>
+                    </div>
+                    <button type="submit" class="w-full bg-sky-600 text-white py-2 rounded-lg hover:bg-sky-700 transition-colors">Đăng Nhập</button>
+                    <p class="text-center text-sm mt-4">
+                        Chưa có tài khoản? <a href="#register" id="link-to-register" class="font-medium text-sky-600 hover:underline">Đăng ký ngay</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Register Page -->
+        <div id="register-page" class="page">
+            <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold text-center mb-6">Tạo Tài Khoản</h2>
+                <form id="register-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Họ</label>
+                            <input type="text" id="register-last-name" class="w-full px-4 py-2 border border-slate-300 rounded-lg" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Tên</label>
+                            <input type="text" id="register-first-name" class="w-full px-4 py-2 border border-slate-300 rounded-lg" required>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Email</label>
+                        <input type="email" id="register-email" class="w-full px-4 py-2 border border-slate-300 rounded-lg" required>
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Mật khẩu</label>
+                        <input type="password" id="register-password" class="w-full px-4 py-2 border border-slate-300 rounded-lg" required minlength="6">
+                    </div>
+                    <button type="submit" class="w-full mt-6 bg-sky-600 text-white py-2 rounded-lg hover:bg-sky-700 transition-colors">Tạo Tài Khoản</button>
+                    <p class="text-center text-sm mt-4">
+                        Đã có tài khoản? <a href="#login" id="link-to-login" class="font-medium text-sky-600 hover:underline">Đăng nhập</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profile-page" class="page">
+            <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold mb-6">Hồ Sơ Cá Nhân</h2>
+                <form id="profile-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium">Ảnh đại diện (URL)</label><input type="text" id="profile-avatar_url" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Ảnh nền (URL)</label><input type="text" id="profile-cover_photo_url" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Họ</label><input type="text" id="profile-last_name" class="w-full px-3 py-2 border rounded-lg" required></div>
+                        <div><label class="block text-sm font-medium">Tên</label><input type="text" id="profile-first_name" class="w-full px-3 py-2 border rounded-lg" required></div>
+                        <div><label class="block text-sm font-medium">Giới tính</label><select id="profile-gender" class="w-full px-3 py-2 border rounded-lg"><option value="">Chọn giới tính</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option><option value="Khác">Khác</option></select></div>
+                        <div><label class="block text-sm font-medium">Ngày sinh</label><input type="date" id="profile-date_of_birth" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Số điện thoại</label><input type="tel" id="profile-phone_number" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Địa chỉ</label><input type="text" id="profile-address" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Facebook URL</label><input type="url" id="profile-facebook_url" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Zalo URL</label><input type="url" id="profile-zalo_url" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Tiktok URL</label><input type="url" id="profile-tiktok_url" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Tên công ty</label><input type="text" id="profile-company_name" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Chức vụ</label><input type="text" id="profile-job_title" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Học hàm</label><input type="text" id="profile-academic_rank" class="w-full px-3 py-2 border rounded-lg"></div>
+                        <div><label class="block text-sm font-medium">Học vị</label><input type="text" id="profile-academic_degree" class="w-full px-3 py-2 border rounded-lg"></div>
+                    </div>
+                    <button type="submit" class="w-full mt-6 bg-sky-600 text-white py-2 rounded-lg hover:bg-sky-700">Cập Nhật Thông Tin</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard Page -->
+        <div id="admin-page" class="page">
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold mb-6">Bảng Điều Khiển Admin</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="py-3 px-4 text-left">ID</th>
+                                <th class="py-3 px-4 text-left">Họ Tên</th>
+                                <th class="py-3 px-4 text-left">Email</th>
+                                <th class="py-3 px-4 text-left">Vai trò</th>
+                                <th class="py-3 px-4 text-left">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-user-list">
+                            <!-- User list will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Area -->
+        <div id="notification" class="fixed bottom-5 right-5 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300 opacity-0"></div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = {
+                // DOM Elements
+                pages: document.querySelectorAll('.page'),
+                navLinks: document.getElementById('nav-links'),
+                notification: document.getElementById('notification'),
+
+                // Forms
+                loginForm: document.getElementById('login-form'),
+                registerForm: document.getElementById('register-form'),
+                profileForm: document.getElementById('profile-form'),
+
+                // Links
+                linkToRegister: document.getElementById('link-to-register'),
+                linkToLogin: document.getElementById('link-to-login'),
+                
+                // Admin
+                adminUserList: document.getElementById('admin-user-list'),
+
+                // State
+                fields: ['avatar_url', 'cover_photo_url', 'last_name', 'first_name', 'gender', 'address', 'phone_number', 'email', 'zalo_url', 'facebook_url', 'tiktok_url', 'company_name', 'job_title', 'date_of_birth', 'academic_rank', 'academic_degree'],
+
+                init() {
+                    this.setupEventListeners();
+                    this.seedAdmin();
+                    this.updateUI();
+                },
+
+                setupEventListeners() {
+                    this.loginForm.addEventListener('submit', this.handleLogin.bind(this));
+                    this.registerForm.addEventListener('submit', this.handleRegister.bind(this));
+                    this.profileForm.addEventListener('submit', this.handleProfileUpdate.bind(this));
+                    this.linkToRegister.addEventListener('click', () => this.showPage('register'));
+                    this.linkToLogin.addEventListener('click', () => this.showPage('login'));
+                    window.addEventListener('hashchange', this.updateUI.bind(this));
+                },
+
+                // --- DATA MANAGEMENT (localStorage) ---
+                getUsers() {
+                    return JSON.parse(localStorage.getItem('users')) || [];
+                },
+                saveUsers(users) {
+                    localStorage.setItem('users', JSON.stringify(users));
+                },
+                getCurrentUser() {
+                    const loggedInUserId = localStorage.getItem('loggedInUserId');
+                    if (!loggedInUserId) return null;
+                    const users = this.getUsers();
+                    return users.find(u => u.id === parseInt(loggedInUserId));
+                },
+                seedAdmin() {
+                    const users = this.getUsers();
+                    if (users.find(u => u.email === 'admin@vltuyen.com')) return;
+
+                    const adminUser = this.createUserObject('Admin', 'VLTuyen', 'admin@vltuyen.com', 'Longtuyen2025@');
+                    adminUser.role = 'admin';
+                    users.push(adminUser);
+                    this.saveUsers(users);
+                },
+
+                // --- UI MANAGEMENT ---
+                showPage(pageId) {
+                    this.pages.forEach(page => {
+                        page.classList.remove('active');
+                    });
+                    const activePage = document.getElementById(`${pageId}-page`);
+                    if (activePage) {
+                        activePage.classList.add('active');
+                    }
+                    window.location.hash = pageId;
+                },
+                updateUI() {
+                    const currentUser = this.getCurrentUser();
+                    if (currentUser) {
+                        this.navLinks.innerHTML = `
+                            ${currentUser.role === 'admin' ? '<a href="#admin" class="text-slate-600 hover:text-sky-600">Bảng Admin</a>' : ''}
+                            <a href="#profile" class="text-slate-600 hover:text-sky-600">Hồ Sơ</a>
+                            <a href="#" id="logout-btn" class="bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-sm font-medium">Đăng xuất</a>
+                        `;
+                        document.getElementById('logout-btn').addEventListener('click', this.handleLogout.bind(this));
+                        
+                        const hash = window.location.hash.replace('#', '');
+                        if (hash === 'admin' && currentUser.role === 'admin') {
+                            this.renderAdminDashboard();
+                            this.showPage('admin');
+                        } else {
+                            this.populateProfileForm();
+                            this.showPage('profile');
+                        }
+                    } else {
+                        this.navLinks.innerHTML = `
+                            <a href="#login" class="text-slate-600 hover:text-sky-600">Đăng Nhập</a>
+                            <a href="#register" class="bg-sky-600 text-white px-3 py-1 rounded-full text-sm font-medium">Đăng Ký</a>
+                        `;
+                        const hash = window.location.hash.replace('#', '');
+                        this.showPage(hash === 'register' ? 'register' : 'login');
+                    }
+                },
+                showNotification(message, isError = false) {
+                    this.notification.textContent = message;
+                    this.notification.className = `fixed bottom-5 right-5 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300 opacity-100 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+                    setTimeout(() => {
+                        this.notification.classList.remove('opacity-100');
+                        this.notification.classList.add('opacity-0');
+                    }, 3000);
+                },
+
+                // --- FORM HANDLERS ---
+                handleLogin(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+                    const users = this.getUsers();
+                    const user = users.find(u => u.email === email && u.password === password);
+
+                    if (user) {
+                        localStorage.setItem('loggedInUserId', user.id);
+                        this.showNotification('Đăng nhập thành công!');
+                        this.updateUI();
+                    } else {
+                        this.showNotification('Email hoặc mật khẩu không chính xác.', true);
+                    }
+                },
+                handleRegister(e) {
+                    e.preventDefault();
+                    const lastName = document.getElementById('register-last-name').value;
+                    const firstName = document.getElementById('register-first-name').value;
+                    const email = document.getElementById('register-email').value;
+                    const password = document.getElementById('register-password').value;
+                    
+                    const users = this.getUsers();
+                    if (users.find(u => u.email === email)) {
+                        this.showNotification('Email này đã được sử dụng.', true);
+                        return;
+                    }
+
+                    const newUser = this.createUserObject(lastName, firstName, email, password);
+                    users.push(newUser);
+                    this.saveUsers(users);
+
+                    this.showNotification('Tạo tài khoản thành công!');
+                    this.registerForm.reset();
+                    this.showPage('login');
+                },
+                handleProfileUpdate(e) {
+                    e.preventDefault();
+                    const currentUser = this.getCurrentUser();
+                    if (!currentUser) return;
+                    
+                    let users = this.getUsers();
+                    const userIndex = users.findIndex(u => u.id === currentUser.id);
+
+                    if (userIndex > -1) {
+                        this.fields.forEach(field => {
+                            const element = document.getElementById(`profile-${field}`);
+                            if (element) {
+                                users[userIndex][field] = element.value;
+                            }
+                        });
+                        this.saveUsers(users);
+                        this.showNotification('Hồ sơ đã được cập nhật!');
+                    }
+                },
+                handleLogout(e) {
+                    e.preventDefault();
+                    localStorage.removeItem('loggedInUserId');
+                    this.showNotification('Đã đăng xuất.');
+                    this.updateUI();
+                },
+
+                // --- RENDER FUNCTIONS ---
+                populateProfileForm() {
+                    const currentUser = this.getCurrentUser();
+                    if (!currentUser) return;
+                    
+                    this.fields.forEach(field => {
+                        const element = document.getElementById(`profile-${field}`);
+                        if (element) {
+                            element.value = currentUser[field] || '';
+                        }
+                    });
+                },
+                renderAdminDashboard() {
+                    const users = this.getUsers();
+                    this.adminUserList.innerHTML = '';
+                    users.forEach(user => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'border-b';
+                        tr.innerHTML = `
+                            <td class="py-3 px-4">${user.id}</td>
+                            <td class="py-3 px-4">${user.first_name} ${user.last_name}</td>
+                            <td class="py-3 px-4">${user.email}</td>
+                            <td class="py-3 px-4">${user.role}</td>
+                            <td class="py-3 px-4">
+                                ${user.role !== 'admin' ? '<button class="delete-btn bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600" data-id="'+user.id+'">Xóa</button>' : ''}
+                            </td>
+                        `;
+                        this.adminUserList.appendChild(tr);
+                    });
+
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const userId = parseInt(e.target.dataset.id);
+                            if (confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+                                let currentUsers = this.getUsers();
+                                currentUsers = currentUsers.filter(u => u.id !== userId);
+                                this.saveUsers(currentUsers);
+                                this.showNotification('Đã xóa người dùng.');
+                                this.renderAdminDashboard();
+                            }
+                        });
+                    });
+                },
+
+                // --- HELPERS ---
+                createUserObject(lastName, firstName, email, password) {
+                    const newUser = {
+                        id: Date.now(),
+                        last_name: lastName,
+                        first_name: firstName,
+                        email: email,
+                        password: password, // Trong ứng dụng thực tế, mật khẩu phải được mã hóa (hashed) trên server.
+                        role: 'user',
+                    };
+                    this.fields.forEach(field => {
+                        if (!newUser.hasOwnProperty(field)) {
+                            newUser[field] = '';
+                        }
+                    });
+                    return newUser;
+                }
+            };
+
+            app.init();
+        });
+    </script>
+</body>
+</html>
